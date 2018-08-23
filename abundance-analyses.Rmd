@@ -1,0 +1,42 @@
+---
+title: "Abundance analyses"
+author: "Jeff Oliver"
+date: "August 23, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Testing for effects of sampling method on abundances, as well as how size influences abundance
+
+# Methods
+## Setup
+Load data and third-party packages.
+
+```{r data-setup}
+library("tidyr")
+library("ggplot2")
+bioscan <- read.csv(file = "data/BioScanData.csv")
+
+# Drop any rows missing data
+bioscan <- na.omit(bioscan)
+```
+
+## Data wrangling
+Only want to use data for those sites where we have information for both collection types.
+
+```{r identify-complete-data}
+# Identify sites with data for each of the two collection methods
+pollard.sites <- bioscan$Site.Number[bioscan$Collection.Method == "Pollard Walk"]
+malaise.sites <- bioscan$Site.Number[bioscan$Collection.Method == "Malaise"]
+
+# Identify sites with data for *both* collection methods
+sites.with.both <- intersect(x = pollard.sites, y = malaise.sites)
+
+# Reduce dataset to only those sites with both types of data
+bioscan <- bioscan[bioscan$Site.Number %in% sites.with.both, ]
+rownames(bioscan) <- NULL
+```
+
