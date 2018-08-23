@@ -6,6 +6,7 @@
 rm(list = ls())
 
 ################################################################################
+library("tidyr")
 bioscan <- read.csv(file = "data/BioScanData.csv")
 
 # Drop any rows missing data
@@ -29,7 +30,17 @@ bioscan$richness <- apply(X = bioscan[, species.cols],
                             sum(x > 0)
                           })
 
-simple.lm <- lm(richness ~ Collection.Method, data = bioscan)
-summary(simple.lm)
+# Create data frame for t-test. One column for Pollard, one for Malaise
+richness.df <- bioscan[, c("Site.Number", "Collection.Method", "richness")]
+richness.df <- richness.df %>%
+  spread(Collection.Method, richness)
 
-boxplot(richness ~ Collection.Method, data = bioscan)
+richness.t <- t.test(x = richness.df$Malaise, 
+                     y = richness.df$`Pollard Walk`,
+                     paired = TRUE)
+richness.t
+
+boxplot(richness ~ Collection.Method, data = bioscan,
+        xlab = "Collection Method",
+        ylab = "Species Richness",
+        las = 1)
