@@ -17,8 +17,11 @@ Load data and third-party packages.
 
 ```{r data-setup}
 library("tidyr")
+library("dplyr")
 library("ggplot2")
+library("nlme")
 bioscan <- read.csv(file = "data/BioScanData.csv")
+species.data <- read.csv(file = "data/species-data.csv")
 
 # Drop any rows missing data
 bioscan <- na.omit(bioscan)
@@ -38,5 +41,98 @@ sites.with.both <- intersect(x = pollard.sites, y = malaise.sites)
 # Reduce dataset to only those sites with both types of data
 bioscan <- bioscan[bioscan$Site.Number %in% sites.with.both, ]
 rownames(bioscan) <- NULL
+```
+
+## Abundance calculation
+
+We are interested in the differences in abundance between each survey type, so we take the difference in abundance for each survey type at each site. We are looking for a data frame with:
+
+| site | species | pollard.minus.malaise |
+|:-----|:........|:--------------:|
+| 4    | Anthocharis_sara | 0     |
+| 4    | Agraulis_vanillae |  2   |
+| ...  | ...              | ...   |
+| 31   | Vanessa_atalanta |  0    |
+| 31   | Vanessa_cardui   |  0    |
+
+
+```{r calculate-abundance}
+# Identify those columns with species data
+species.cols <- c(5:33)
+
+# Transform data to long format
+bioscan.long <- bioscan %>%
+  gather(key = "Species", value = "Abundance", -c(1:4))
+
+# Add species size data
+bioscan.long <- merge(x = bioscan.long, y = species.data, by.x = "Species", by.y = "species")
+bioscan.long$size <- apply(X = bioscan.long[, c("opler.wright.min", "opler.wright.max")],
+                      MARGIN = 1,
+                      FUN = function(x) {mean(x)})
+
+
+# Separate the two collection types (there is probably an easier way than this...)
+malaise.long <- bioscan.long[bioscan.long$Collection.Method == "Malaise", c("Site.Number", "Species", "Abundance")]
+pollard.long <- bioscan.long[bioscan.long$Collection.Method == "Pollard Walk", c("Site.Number", "Species", "Abundance")]
+colnames(malaise.long)[colnames(malaise.long) == "Abundance"] <- "Malaise"
+colnames(pollard.long)[colnames(pollard.long) == "Abundance"] <- "Pollard"
+
+# Create data frame for analysis with the _differences_ in abundance (Pollard - Malaise)
+abundance.deltas <- merge(x = malaise.long, pollard.long, by = c("Site.Number", "Species"))
+abundance.deltas$Delta <- abundance.deltas$Pollard - abundance.deltas$Malaise
+
+# Add in that species data, mostly for size
+# abundance.deltas <- merge(x = abundance.deltas, y = species.data, by.x = "Species", by.y = "species")
+# # Use the mean between the min & max for size
+# abundance.deltas$size <- apply(X = abundance.deltas[, c("opler.wright.min", "opler.wright.max")],
+#                                MARGIN = 1,
+#                                FUN = function(x) {mean(x)})
+```
+
+## Statistical analysis
+
+### Effect of sampling type
+Use `lmer` to include site number as a random (intercept) effect. Syntax should be something like `lmer(abundance ~ (1|site))`
+```{r test-non-zero-intercept}
+# Run simple model, testing the null hypothesis of intercept = 0 (no difference in abundance)
+simple.model <- lme(Delta ~ 1, random = ~1|Site.Number, data = abundance.deltas)
+simple.tTable <- summary(simple.model)$tTable
+
+sm <- lme(Abundance ~ Collection.Method, random = ~1|Site.Number, data = bioscan.long)
+summary(sm)
+```
+
+### Effect of species size
+```{r test-size-effect}
+size.model <- lme(Abundance ~ Collection.Method + size, random = ~1|Site.Number, data = bioscan.long)
+summary(size.model)
+
+
+# Run simple model, testing the null hypothesis of intercept = 0 (no difference in abundance)
+# size.model <- lme(Delta ~ size, random = ~1|Site.Number, data = abundance.deltas)
+# size.tTable <- summary(size.model)$tTable
+
+```
+
+
+## Results
+```{r p-value-text}
+# Have to do some formatting if p-value is really low, otherwise it just gets 
+# reported as "0"
+simple.p.value <- "< 0.001"
+if (simple.tTable[1, "p-value"] > 0.001) {
+  simple.p.value <- paste0("= ", round(simple.tTable[1, "p-value"], 3))
+}
+
+```
+
+On average, abundance was higher in Pollard walk surveys than in Malaise traps (_t_ = `r round(simple.tTable[1, "t-value"]), 3)`, p `r simple.p.value`). I'm not sure this plot is the best way to visualize this...
+```{r abundance-boxplot, out.height = "250px"}
+abundance.distribution <- ggplot(data = bioscan.long, mapping = aes(x = Abundance, fill = Collection.Method)) +
+  geom_histogram(binwidth = 1, position = "dodge") +
+  xlab(label = "Abundance") +
+  ylab(label = "Frequency") +
+  scale_fill_manual(values = c("#CA3542", "#27647B"), name = "Collection Method")
+print(abundance.distribution)
 ```
 
