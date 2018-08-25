@@ -69,7 +69,7 @@ $$
 Abundance = \beta_0 + \beta_1 \times Collection Method + b_{0i}
 $$
 
-where $b_{0i}$ is a random intercept for the _i^th_ site.
+where $b_{0i}$ is a random intercept for the _i^th^_ site.
 
 
 ```{r test-non-zero-intercept}
@@ -88,7 +88,7 @@ $$
 Abundance = \beta_0 + \beta_1 \times Collection Method + \beta_2 \times Size + \beta_3 \times Collection Method \times Size + b_{0i}
 $$
 
-where $b_{0i}$ is a random intercept for the _i^th_ site.
+where $b_{0i}$ is a random intercept for the _i^th^_ site.
 
 ```{r test-size-effect}
 # Run a more complex model, with size as a fixed effect, as well as the 
