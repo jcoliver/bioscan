@@ -26,7 +26,7 @@ bioscan <- na.omit(bioscan)
 
 We are thus going to calculate richness for the area based on Pollard walks, richness for the area based on Malaise traps, and richness for the area based on iNaturalist data. For all these calculations, we will only have a single number; to get an idea of variation, we'll use bootstrap resampling (with replacement) to get a mean richenss and some measure of uncertainty about this estimate. For the first two (Pollard walk and Malaise trap), the process will be:
 
-1. Create a boostrapped sample of all sites for the collection method of interest. For example, if there are `r nrow(bioscan[bioscan$Collection.Method == "Malaise", ]` rows (sites) of Malaise trap data, we create a new data frame with `r nrow(bioscan[bioscan$Collection.Method == "Malaise", ]` rows of data sampled with replacement from the original data.
+1. Create a boostrapped sample of all sites for the collection method of interest. For example, if there are `r nrow(bioscan[bioscan$Collection.Method == "Malaise", ])` rows (sites) of Malaise trap data, we create a new data frame with `r nrow(bioscan[bioscan$Collection.Method == "Malaise", ])` rows of data sampled with replacement from the original data.
 2. Perform richness calculation on that sample.
     1. Extract all columns with species counts
     2. Perform `colSums` calculation on columns with species counts
@@ -55,8 +55,17 @@ inaturalist <- inaturalist[inaturalist$longitude >= min.lon &
                              inaturalist$latitude >= min.lat &
                              inaturalist$latitude <= max.lat, ]
 
-# Relevel species column (dropping unused levels)
-inaturalist$species <- as.factor(as.character(inaturalist$species))
+# We want to make species column in iNaturalist match the format as in bioscan 
+# data: Genus_species
+inaturalist$species <- gsub(pattern = " ", 
+                            replacement = "_", 
+                            x = as.character(inaturalist$species))
+
+# Turn it back into a factor, which also means we've dropped unused levels
+inaturalist$species <- as.factor(inaturalist$species)
+
+#TODO: Will need to reconcile potential taxonomic differences between 
+# iNaturalist and bioscan
 ```
 
 ## Richness calculation
@@ -65,14 +74,17 @@ To calculate species richness, we count, for each site/collection method combina
 ```{r richness-bootstrapping}
 # Identify those columns with species data
 species.cols <- c(5:33)
-num.samples <- 10
+
+# Split the two bioscan data into separate data frames for easier bootstrapping
+malaise <- bioscan[bioscan$Collection.Method == "Malaise", ]
+pollard <- bioscan[bioscan$Collection.Method == "Pollard Walk", ]
+
+# Set up size of bootstrap and data frame to collect results
+num.samples <- 100
 bootstrapped.df <- data.frame(id = 1:num.samples,
                               Malaise = NA,
                               Pollard = NA,
                               iNaturalist = NA)
-
-malaise <- bioscan[bioscan$Collection.Method == "Malaise", ]
-pollard <- bioscan[bioscan$Collection.Method == "Pollard Walk", ]
 
 for (i in 1:num.samples) {
   bs.malaise <- malaise[sample(x = 1:nrow(malaise), size = nrow(malaise), replace = TRUE), ]
@@ -82,18 +94,8 @@ for (i in 1:num.samples) {
   bootstrapped.df$Pollard[i] <- sum(colSums(x = bs.pollard[, species.cols]) > 0)
   
   bs.inaturalist <- inaturalist[sample(x = 1:nrow(inaturalist), size = nrow(inaturalist), replace = TRUE), ]
-  bootstrapped.df$iNaturalist[i] <- 
+  bootstrapped.df$iNaturalist[i] <- length(unique(bs.inaturalist$species))
 }
-
-
-
-# Calculate richness for each row (total number of species with at least one 
-# individual observed)
-bioscan$richness <- apply(X = bioscan[, species.cols],
-                          MARGIN = 1,
-                          FUN = function(x) {
-                            sum(x > 0)
-                          })
 ```
 
 # Results
@@ -107,3 +109,5 @@ richness.boxplot <- ggplot(data = bootstrap.long, mapping = aes(x = Collection.M
   ylab(label = "Species Richness")
 print(richness.boxplot)
 ```
+
+We also would like to glance at the overlap and differences among the three collections, a Venn diagram works best.
