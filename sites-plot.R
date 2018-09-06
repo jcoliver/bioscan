@@ -86,4 +86,4 @@ both.map <- ggmap(la.map) +
   coord_map(xlim = c(min(bioscan$Longitude) - 0.1, max(bioscan$Longitude) + 0.1),
             ylim = c(min(bioscan$Latitude) - 0.1, max(bioscan$Latitude) + 0.1))
 print(both.map)
-ggsave(filename = "output/site-map-combined.png", plot = bioscan.map)
+ggsave(filename = "output/site-map-combined.png", plot = both.map)
