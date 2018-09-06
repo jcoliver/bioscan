@@ -74,6 +74,11 @@ inaturalist$species[inaturalist$species == "Paratrytone_melane"] <- "Poanes_mela
 
 # Turn it back into a factor, which also means we've dropped unused levels
 inaturalist$species <- as.factor(inaturalist$species)
+
+# Go ahead and save this so we can use it elsewhere (like a map)
+write.csv(x = inaturalist, 
+          file = "data/iNaturalist-clean-reduced.csv", 
+          row.names = FALSE)
 ```
 
 ## Richness calculation
@@ -111,7 +116,8 @@ bootstrap.long <- gather(data = bootstrapped.df, key = "Collection.Method", valu
 richness.boxplot <- ggplot(data = bootstrap.long, mapping = aes(x = Collection.Method, y = Richness)) +
   geom_boxplot() +
   xlab(label = "Collection Method") + 
-  ylab(label = "Species Richness")
+  ylab(label = "Species Richness") +
+  theme_bw()
 print(richness.boxplot)
 ```
 
@@ -162,15 +168,6 @@ malaise.inaturalist <- sum(species.in.methods$malaise &
                              species.in.methods$inaturalist)
 pollard.inaturalist <- sum(species.in.methods$pollard & 
                              species.in.methods$inaturalist)
-# malaise.pollard <- sum(species.in.methods$malaise & 
-#                          species.in.methods$pollard &
-#                          !species.in.methods$inaturalist)
-# malaise.inaturalist <- sum(species.in.methods$malaise & 
-#                              species.in.methods$inaturalist &
-#                              !species.in.methods$pollard)
-# pollard.inaturalist <- sum(species.in.methods$pollard & 
-#                              species.in.methods$inaturalist &
-#                              !species.in.methods$malaise)
 all.three <- sum(species.in.methods$malaise &
                    species.in.methods$pollard &
                    species.in.methods$inaturalist)

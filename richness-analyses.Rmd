@@ -101,6 +101,7 @@ We can compare the two types visually with a boxplot:
 richness.boxplot <- ggplot(data = bioscan, mapping = aes(x = Collection.Method, y = richness)) +
   geom_boxplot() +
   xlab(label = "Collection Method") + 
-  ylab(label = "Species Richness")
+  ylab(label = "Species Richness") + 
+  theme_bw()
 print(richness.boxplot)
 ```

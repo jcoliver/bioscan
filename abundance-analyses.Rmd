@@ -116,7 +116,8 @@ abundance.distribution <- ggplot(data = bioscan.long,
   geom_histogram(binwidth = 1, position = "dodge") +
   xlab(label = "Abundance") +
   ylab(label = "Frequency") +
-  scale_fill_manual(values = c("#CA3542", "#27647B"), name = "Collection Method")
+  scale_fill_manual(values = c("#CA3542", "#27647B"), name = "Collection Method") +
+  theme_bw()
 print(abundance.distribution)
 ```
 
