@@ -55,5 +55,5 @@ output.df$Malaise[output.df$Species %in% malaise.species] <- "X"
 output.df$iNaturalist[output.df$Species %in% inaturalist.species] <- "X"
 
 write.csv(x = output.df,
-          file = "output/species-table.txt", 
+          file = "output/species-method.txt", 
           row.names = FALSE)
