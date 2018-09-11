@@ -119,6 +119,7 @@ richness.boxplot <- ggplot(data = bootstrap.long, mapping = aes(x = Collection.M
   ylab(label = "Species Richness") +
   theme_bw()
 print(richness.boxplot)
+ggsave(filename = "output/figure-bootstrap-richness.png", plot = richness.boxplot)
 ```
 
 We also would like to glance at the overlap and differences among the three collections, a Venn diagram works best. **Blech** This is pretty ugly and should be replace with a `ggplot2` approach. See example at [https://scriptsandstatistics.wordpress.com/2018/04/26/how-to-plot-venn-diagrams-using-r-ggplot2-and-ggforce/](https://scriptsandstatistics.wordpress.com/2018/04/26/how-to-plot-venn-diagrams-using-r-ggplot2-and-ggforce/).
