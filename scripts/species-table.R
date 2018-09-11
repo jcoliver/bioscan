@@ -32,15 +32,7 @@ species.cols <- c(5:33)
 # TABLE
 #' Want (but family will get added on later)
 #' Family  Species  Pollard  Malaise  iNaturalist
-species <- union(x = colnames(bioscan)[species.cols], 
-                 y = inaturalist$species)
 
-output.df <- data.frame(Species = species,
-                        Pollard = NA,
-                        Malaise = NA,
-                        iNaturalist = NA)
-
-# Identify those species found in Pollard walks
 malaise.totals <- colSums(x = bioscan[bioscan$Collection.Method == "Malaise", species.cols])
 malaise.species <- names(x = malaise.totals)[malaise.totals > 0]
 
@@ -48,3 +40,20 @@ pollard.totals <- colSums(x = bioscan[bioscan$Collection.Method == "Pollard Walk
 pollard.species <- names(x = pollard.totals)[pollard.totals > 0]
 
 inaturalist.species <- unique(as.character(inaturalist$species))
+
+species <- union(x = union(x = malaise.species, y = pollard.species), 
+                 y = inaturalist.species)
+
+output.df <- data.frame(Species = sort(species),
+                        Pollard = NA,
+                        Malaise = NA,
+                        iNaturalist = NA)
+
+
+output.df$Pollard[output.df$Species %in% pollard.species] <- "X"
+output.df$Malaise[output.df$Species %in% malaise.species] <- "X"
+output.df$iNaturalist[output.df$Species %in% inaturalist.species] <- "X"
+
+write.csv(x = output.df,
+          file = "output/species-table.txt", 
+          row.names = FALSE)
