@@ -85,6 +85,16 @@ richness.t <- t.test(x = richness.df$Malaise,
 ```
 
 # Results
+Comparing means and standard deviations
+```{r means-reporting}
+mean.pollard <- mean(richness.df$`Pollard Walk`)
+mean.malaise <- mean(richness.df$Malaise)
+```
+Mean species richness in Pollard walks: `r round(x = mean.pollard, digits = 3)`
+
+Mean species richness in Malaise traps: `r round(x = mean.malaise, digits = 3)`
+
+
 ```{r p-value-text, echo = FALSE}
 # Have to do some formatting if p-value is really low, otherwise it just gets 
 # reported as "0"

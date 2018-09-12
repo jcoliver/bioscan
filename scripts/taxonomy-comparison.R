@@ -19,7 +19,8 @@ inaturalist.species <- gsub(pattern = " ",
 
 bioscan.missing <- setdiff(bioscan.species, inaturalist.species)
 
-#' bioscan           iNaturalist
-#' Plebejus acmon    Icaricia acmon
-#' Pyrgus albescens  Pyrgus albescens [same]
-#' Poanes melane     Paratrytone melane
+#' bioscan             iNaturalist
+#' Plebejus acmon      Icaricia acmon
+#' Pyrgus albescens    Pyrgus albescens [same]
+#' Poanes melane       Paratrytone melane
+#' Papilio cresphontes Zerynthia rumina [bad GBIF import!]

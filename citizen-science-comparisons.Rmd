@@ -71,6 +71,9 @@ inaturalist$species <- gsub(pattern = " ",
 # taxonomy used by bioscan
 inaturalist$species[inaturalist$species == "Icaricia_acmon"] <- "Plebejus_acmon"
 inaturalist$species[inaturalist$species == "Paratrytone_melane"] <- "Poanes_melane"
+inaturalist$species[inaturalist$species == "Zerynthia_rumina"] <- "Papilio_cresphontes"
+inaturalist$species[inaturalist$species == "Limenitis_bredowii"] <- "Adelpha_bredowii"
+
 
 # Turn it back into a factor, which also means we've dropped unused levels
 inaturalist$species <- as.factor(inaturalist$species)
@@ -84,11 +87,17 @@ write.csv(x = inaturalist,
 ## Richness calculation
 To calculate species richness, we count, for each site/collection method combination, the number of species for which at least one individual was observed. Our data are currently organized so that a single row represents a single site/collection method combination, so we can perform this operation once for each row and store the data in a new column called `richness`.
 
-```{r richness-bootstrapping}
-# Split the two bioscan data into separate data frames for easier bootstrapping
+```{r area-richness}
+# Split the two bioscan data into separate data frames for easier calculations
 malaise <- bioscan[bioscan$Collection.Method == "Malaise", ]
 pollard <- bioscan[bioscan$Collection.Method == "Pollard Walk", ]
 
+malaise.total <- sum(colSums(x = malaise[, species.cols]) > 0)
+pollard.total <- sum(colSums(x = pollard[, species.cols]) > 0)
+inaturalist.total <- length(unique(inaturalist$species))
+```
+
+```{r richness-bootstrapping}
 # Set up size of bootstrap and data frame to collect results
 num.samples <- 100
 bootstrapped.df <- data.frame(id = 1:num.samples,
@@ -106,12 +115,28 @@ for (i in 1:num.samples) {
   bs.inaturalist <- inaturalist[sample(x = 1:nrow(inaturalist), size = nrow(inaturalist), replace = TRUE), ]
   bootstrapped.df$iNaturalist[i] <- length(unique(bs.inaturalist$species))
 }
+
+# Calculate means so we can report those
+mean.bs.pollard <- mean(bootstrapped.df$Pollard)
+mean.bs.malaise <- mean(bootstrapped.df$Malaise)
+mean.bs.inaturalist <- mean(bootstrapped.df$iNaturalist)
 ```
 
 # Results
+Looking at totals of species in the three data sources:
+
+|     | Malaise | Pollard | iNaturalist |
+|:----|:-------:|:-------:|:-----------:|
+| Observed richness | `r malaise.total` | `r pollard.total` | `r inaturalist.total` |
+| Bootstrapped estimate | `r round(mean.bs.malaise, 3)` | `r round(mean.bs.pollard, 3)` | `r round(mean.bs.inaturalist, 3)` |
+
 We can compare the three sources of richness visually with a boxplot (after reshaping our data):
 ```{r richness-boxplot, out.height = "250px"}
 bootstrap.long <- gather(data = bootstrapped.df, key = "Collection.Method", value = "Richness", -id)
+
+# Re-leveling the Collection.Method so it displays in preferred order
+bootstrap.long$Collection.Method <- factor(bootstrap.long$Collection.Method, 
+                                           levels = c("Malaise", "Pollard", "iNaturalist"))
 
 richness.boxplot <- ggplot(data = bootstrap.long, mapping = aes(x = Collection.Method, y = Richness)) +
   geom_boxplot() +
