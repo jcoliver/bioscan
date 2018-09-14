@@ -18,10 +18,8 @@ Loading dependencies for data wrangling (`tidyr`) and data visualization (`ggplo
 ```{r data-setup}
 library("tidyr")
 library("ggplot2")
-bioscan <- read.csv(file = "data/BioScanData.csv")
-
-# Drop any rows missing data
-bioscan <- na.omit(bioscan)
+source(file = "bioscan-functions.R")
+bioscan <- CompleteBioscan()
 
 # Identify those columns with species data
 species.cols <- c(5:33)

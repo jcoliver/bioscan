@@ -18,27 +18,12 @@ There is some data wrangling that needed to happen, and I had to use the `tidyr`
 ```{r data-setup}
 library("tidyr")
 library("ggplot2")
-bioscan <- read.csv(file = "data/BioScanData.csv")
-
-# Drop any rows missing data
-bioscan <- na.omit(bioscan)
+source(file = "bioscan-functions.R")
+bioscan <- CompleteBioscan()
 ```
 
 ## Data wrangling
 For the paired t-test, we only want to use data for those sites where we have information for both collection types. So we need to identify which sites have Pollard walk data, which sites have Malaise trap data, and which sites have **both** (the intersection of Pollard and Malaise).
-
-```{r identify-complete-data}
-# Identify sites with data for each of the two collection methods
-pollard.sites <- bioscan$Site.Number[bioscan$Collection.Method == "Pollard Walk"]
-malaise.sites <- bioscan$Site.Number[bioscan$Collection.Method == "Malaise"]
-
-# Identify sites with data for *both* collection methods
-sites.with.both <- intersect(x = pollard.sites, y = malaise.sites)
-
-# Reduce dataset to only those sites with both types of data
-bioscan <- bioscan[bioscan$Site.Number %in% sites.with.both, ]
-rownames(bioscan) <- NULL
-```
 
 ## Richness calculation
 To calculate species richness, we count, for each site/collection method combination, the number of species for which at least one individual was observed. Our data are currently organized so that a single row represents a single site/collection method combination, so we can perform this operation once for each row and store the data in a new column called `richness`.
@@ -93,7 +78,6 @@ mean.malaise <- mean(richness.df$Malaise)
 Mean species richness in Pollard walks: `r round(x = mean.pollard, digits = 3)`
 
 Mean species richness in Malaise traps: `r round(x = mean.malaise, digits = 3)`
-
 
 ```{r p-value-text, echo = FALSE}
 # Have to do some formatting if p-value is really low, otherwise it just gets 
