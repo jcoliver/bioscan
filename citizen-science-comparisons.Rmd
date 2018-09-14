@@ -35,51 +35,11 @@ We are thus going to calculate richness for the area based on Pollard walks, ric
 3. Store this richness value as the estimate of richness for that sample.
 4. Repeat
 
-For the iNaturalist data, will perform similar approach, but will need only to count number of unique values in species column to determine richness of bootstrapped sample. See `scripts/gbif-processing.sh` and `scripts/gbif-additional-processing.R` for details of the iNaturalist data. The data in the file of interest still needs to be geographically restricted. For now, we will just draw a rectangle that encapsulates the sites from bioscan and only include iNaturalist observations that are included in that rectangle.
+For the iNaturalist data, will perform similar approach, but will need only to count number of unique values in species column to determine richness of bootstrapped sample. See `scripts/gbif-processing.sh` and `scripts/gbif-additional-processing.R` for details of the iNaturalist data. We restrict the data in the iNaturalist data set to latitude and longitude boundaries in the bioscan data.
 
 ```{r inaturalist-data-processing}
 # Read in full data
-inaturalist <- read.csv(file = "data/iNaturalist-clean.csv")
-
-# Drop NAs (should have been done already, but just in case)
-inaturalist <- na.omit(inaturalist)
-
-# Determine boundaries of rectangle from Bioscan data
-max.lon <- max(bioscan$Longitude)
-min.lon <- min(bioscan$Longitude)
-max.lat <- max(bioscan$Latitude)
-min.lat <- min(bioscan$Latitude)
-
-# Restrict iNaturalist data to that rectangle
-inaturalist <- inaturalist[inaturalist$longitude >= min.lon &
-                             inaturalist$longitude <= max.lon &
-                             inaturalist$latitude >= min.lat &
-                             inaturalist$latitude <= max.lat, ]
-```
-
-Need to make sure species names match up in the two data sources.
-```{r taxonomy-reconcile}
-# We want to make species column in iNaturalist match the format as in bioscan 
-# data: Genus_species
-inaturalist$species <- gsub(pattern = " ", 
-                            replacement = "_", 
-                            x = as.character(inaturalist$species))
-
-# And need to make two adjustments to iNaturalist species so they match with 
-# taxonomy used by bioscan
-inaturalist$species[inaturalist$species == "Icaricia_acmon"] <- "Plebejus_acmon"
-inaturalist$species[inaturalist$species == "Paratrytone_melane"] <- "Poanes_melane"
-inaturalist$species[inaturalist$species == "Zerynthia_rumina"] <- "Papilio_cresphontes"
-inaturalist$species[inaturalist$species == "Limenitis_bredowii"] <- "Adelpha_bredowii"
-
-
-# Turn it back into a factor, which also means we've dropped unused levels
-inaturalist$species <- as.factor(inaturalist$species)
-
-# Go ahead and save this so we can use it elsewhere (like a map)
-write.csv(x = inaturalist, 
-          file = "data/iNaturalist-clean-reduced.csv", 
-          row.names = FALSE)
+inaturalist <- CleanINaturalist(bioscan.df = bioscan)
 ```
 
 ## Richness calculation

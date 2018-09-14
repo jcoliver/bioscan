@@ -39,3 +39,74 @@ CompleteBioscan <- function(input = "data/BioScanData.csv",
   }
   return(bioscan.complete)
 }
+
+################################################################################
+#' Create iNaturalist data that is restricted to geographic area of bioscan data
+#' and uses the same taxonomy
+#' 
+#' @param input character iNaturalist data file name
+#' @param output character file name for restricted iNaturalist data
+#' @param bioscan character filename of original bioscan data
+#' @param bioscan.complete character filname of bioscan data including only 
+#' sites with data for both collection methods
+#' 
+#' @return data.frame only including those 
+CleanINaturalist <- function(input = "data/iNaturalist-clean.csv",
+                             output = "data/iNaturalist-clean-reduced.csv",
+                             bioscan.file = "data/BioScanData.csv",
+                             bioscan.complete.file = "data/BioScanDataComplete.csv",
+                             bioscan.df = NULL) {
+  inaturalist.reduced <- NULL
+  if (file.exists(output)) {
+    inaturalist.reduced <- read.csv(file = output)
+  } else {
+    inaturalist <- read.csv(file = input)
+    
+    # Drop NAs (should have been done already, but just in case)
+    inaturalist <- na.omit(inaturalist)
+    
+    # Read in the bioscan data (or clean it up if it hasn't already been done)
+    if (is.null(bioscan.df)) {
+      bioscan <- CompleteBioscan(input = bioscan.file, 
+                                 output = bioscan.complete.file)
+    } else {
+      bioscan <- bioscan.df
+    }
+    # Determine boundaries of rectangle from Bioscan data
+    max.lon <- max(bioscan$Longitude)
+    min.lon <- min(bioscan$Longitude)
+    max.lat <- max(bioscan$Latitude)
+    min.lat <- min(bioscan$Latitude)
+    
+    # Restrict iNaturalist data to that rectangle
+    inaturalist <- inaturalist[inaturalist$longitude >= min.lon &
+                                 inaturalist$longitude <= max.lon &
+                                 inaturalist$latitude >= min.lat &
+                                 inaturalist$latitude <= max.lat, ]
+    
+    # We want to make species column in iNaturalist match the format as in bioscan 
+    # data: Genus_species
+    inaturalist$species <- gsub(pattern = " ", 
+                                replacement = "_", 
+                                x = as.character(inaturalist$species))
+    
+    # And need to make two adjustments to iNaturalist species so they match with 
+    # taxonomy used by bioscan
+    inaturalist$species[inaturalist$species == "Icaricia_acmon"] <- "Plebejus_acmon"
+    inaturalist$species[inaturalist$species == "Paratrytone_melane"] <- "Poanes_melane"
+    inaturalist$species[inaturalist$species == "Zerynthia_rumina"] <- "Papilio_cresphontes"
+    inaturalist$species[inaturalist$species == "Limenitis_bredowii"] <- "Adelpha_bredowii"
+    
+    # Turn it back into a factor, which also means we've dropped unused levels
+    inaturalist$species <- as.factor(inaturalist$species)
+    
+    inaturalist.reduced <- inaturalist
+    rm(bioscan, min.lon, max.lon, min.lat, max.lat, inaturalist)
+    
+    # Go ahead and save this so we can use it elsewhere (like a map)
+    write.csv(x = inaturalist.reduced, 
+              file = output, 
+              row.names = FALSE)
+  }
+  return(inaturalist.reduced)
+}
