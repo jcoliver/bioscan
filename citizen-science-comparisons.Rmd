@@ -18,6 +18,7 @@ Loading dependencies for data wrangling (`tidyr`) and data visualization (`ggplo
 ```{r data-setup}
 library("tidyr")
 library("ggplot2")
+library("dplyr")
 source(file = "bioscan-functions.R")
 bioscan <- CompleteBioscan()
 
@@ -102,71 +103,45 @@ richness.boxplot <- ggplot(data = bootstrap.long, mapping = aes(x = Collection.M
   ylab(label = "Species Richness") +
   theme_bw()
 print(richness.boxplot)
-ggsave(filename = "output/figure-bootstrap-richness.png", plot = richness.boxplot)
+ggsave(filename = "output/figure-bootstrap-richness-boxplot.png", plot = richness.boxplot)
 ```
 
-We also would like to glance at the overlap and differences among the three collections, a Venn diagram works best. **Blech** This is pretty ugly and should be replace with a `ggplot2` approach. See example at [https://scriptsandstatistics.wordpress.com/2018/04/26/how-to-plot-venn-diagrams-using-r-ggplot2-and-ggforce/](https://scriptsandstatistics.wordpress.com/2018/04/26/how-to-plot-venn-diagrams-using-r-ggplot2-and-ggforce/).
-```{r venn-diagram}
-# Need to count the 7 categories
-# Malise only
-# Pollard only
-# iNaturalist only
-# Malaise + Pollard
-# Malaise + iNaturalist
-# Pollard + iNaturalist
-# Malaise + Pollard + iNaturalist
+It may be more appropriate to visualize as a histogram.
+```{r richness-histogram}
+# Use group means for lines in histogram
+means.df <- bootstrap.long %>% 
+  group_by(Collection.Method) %>%
+  summarize(group.mean = mean(Richness))
+# Re-level collection method to display as preferred
+means.df$Collection.Method <-  factor(means.df$Collection.Method, 
+                                      levels = c("Malaise", "Pollard", "iNaturalist"))
 
-# Start by pulling out species names for the two bioscans (only those with non-
-# zero observations)
-malaise.totals <- colSums(x = malaise[, species.cols])
-malaise.species <- names(x = malaise.totals)[malaise.totals > 0]
-
-pollard.totals <- colSums(x = pollard[, species.cols])
-pollard.species <- names(x = pollard.totals)[pollard.totals > 0]
-
-inaturalist.species <- unique(as.character(inaturalist$species))
-
-all.species <- union(x = malaise.species,
-                     y = union(x = pollard.species, y = inaturalist.species))
-
-species.in.methods <- data.frame(species = all.species,
-                                 malaise = all.species %in% malaise.species,
-                                 pollard = all.species %in% pollard.species,
-                                 inaturalist = all.species %in% inaturalist.species)
-species.in.methods <- species.in.methods[order(species.in.methods$species), ]
-
-# OMG this is so freaking ugly
-
-malaise.only <- sum(species.in.methods$malaise & 
-                      !species.in.methods$pollard &
-                      !species.in.methods$inaturalist)
-pollard.only <- sum(species.in.methods$pollard & 
-                      !species.in.methods$malaise &
-                      !species.in.methods$inaturalist)
-inaturalist.only <- sum(species.in.methods$inaturalist & 
-                          !species.in.methods$malaise &
-                          !species.in.methods$pollard)
-malaise.pollard <- sum(species.in.methods$malaise & 
-                         species.in.methods$pollard)
-malaise.inaturalist <- sum(species.in.methods$malaise & 
-                             species.in.methods$inaturalist)
-pollard.inaturalist <- sum(species.in.methods$pollard & 
-                             species.in.methods$inaturalist)
-all.three <- sum(species.in.methods$malaise &
-                   species.in.methods$pollard &
-                   species.in.methods$inaturalist)
-# install.packages("VennDiagram")
-library("VennDiagram")
-library("grid")
-grid.newpage()
-draw.triple.venn(area1 = length(malaise.species), 
-                 area2 = length(pollard.species), 
-                 area3 = length(inaturalist.species),
-                 n12 = malaise.pollard,
-                 n13 = malaise.inaturalist,
-                 n23 = pollard.inaturalist,
-                 n123 = all.three,
-                 category = c("Malaise trap", "Pollard walk", "iNaturalist"),
-                 lty = "blank",
-                 fill = c("skyblue", "pink1", "mediumorchid"))
+richness.histogram <- ggplot(data = bootstrap.long, mapping = aes(x = Richness, fill = Collection.Method)) +
+  geom_histogram(position = "identity", binwidth = 1, color = "#dddddd", alpha = 0.75) +
+  scale_color_brewer(palette = "Dark2") + 
+  scale_fill_brewer(palette = "Dark2") + 
+  geom_vline(data = means.df, 
+             mapping = aes(xintercept = group.mean, color = Collection.Method), 
+             linetype = "dashed") +
+  ylab(label = "# Bootstrap Replicates") +
+  xlab(labe = "Total Species Richness") +
+  theme_bw()
+print(richness.histogram)
+ggsave(filename = "output/figure-bootstrap-richness-histogram.png", plot = richness.boxplot)
 ```
+
+And do a quick t-test comparing iNaturalist to each method
+```{r boostrap-t-test}
+bs.pollard.t <- t.test(x = bootstrapped.df$Pollard, y = bootstrapped.df$iNaturalist)
+bs.malaise.t <- t.test(x = bootstrapped.df$Malaise, y = bootstrapped.df$iNaturalist)
+```
+
+### Pollard walk vs. iNaturalist
+_t_ = `r round(bs.pollard.t$statistic, 3)`  
+_p_ = `r round(bs.pollard.t$p.value, 3)`  
+Means = `r abs(round(bs.pollard.t$estimate, 3))` (Pollard, iNaturalist)
+
+### Malaise traps vs. iNaturalist
+_t_ = `r round(bs.malaise.t$statistic, 3)`  
+_p_ = `r round(bs.malaise.t$p.value, 3)`  
+Means = `r abs(round(bs.malaise.t$estimate, 3))` (Malaise, iNaturalist)
