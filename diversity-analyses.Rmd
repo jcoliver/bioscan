@@ -59,8 +59,8 @@ We can compare the two types visually with a boxplot:
 diversity.boxplot <- ggplot(data = diversity.long, mapping = aes(x = Collection.Method, y = Diversity)) +
   geom_boxplot() +
   xlab(label = "Collection Method") + 
-  ylab(label = "Diversity") + 
+  ylab(label = "Shannon's H") + 
   theme_bw()
 print(richness.boxplot)
-ggsave(filename = "output/figure-diversity-pairwise.png", plot = richness.boxplot)
+ggsave(filename = "output/figure-diversity-pairwise.png", plot = diversity.boxplot)
 ```
