@@ -9,4 +9,146 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# TODO: Create plot with observed species richness and shannon's H (faceting)
+# Comparison of richness and diversity between collection methods
+
+We are interested to compare Malaise trap and Pollard walk surveys to see if there is a difference in the observed species richness, _R_, and diversity. For the latter, we will use Shannon's _H_ as a measure of diversity (Hill 1973).
+
+## Methods
+Using the BioSCAN data, we first calculate _R_ (richness) and _H_ (diversity) for each site, including only those sites for which data from both survey types is available. For the latter, we use the `vegan` package in R (Oksanen et al. 2018). We then compare the two methods through paired t-tests, to determine if the difference in means between collection methods is significant. We use the `ggplot2` package (Wickham 2009) for visualization. Additional data-wrangling provided by `tidyr` package.
+
+Starting by loading dependencies and reading in the data
+```{r data-setup}
+library("tidyr")    # converting data to long and wide format
+library("ggplot2")  # plotting
+library("vegan")    # calculating Shannon's H
+source(file = "bioscan-functions.R")
+bioscan <- CompleteBioscan()
+
+# Identify those columns with species data
+species.cols <- c(5:33)
+```
+
+### Richness
+```{r calculate-richness}
+# Calculate richness for each row (total number of species with at least one 
+# individual observed)
+bioscan$Richness <- apply(X = bioscan[, species.cols],
+                          MARGIN = 1,
+                          FUN = function(x) {
+                            sum(x > 0)
+                          })
+```
+
+### Diversity
+```{r calculate-diversity}
+# Create data frame with only individual counts for each species.
+bioscan$Diversity <- apply(X = bioscan[, species.cols],
+                           MARGIN = 1,
+                           FUN = function(x) {
+                             vegan::diversity(x = x, index = "shannon")
+                           })
+```
+
+### t-test
+#### Richness
+```{r t-test-richness}
+# Create data frame for richness t-test. One column for Pollard, one for Malaise
+richness.df <- bioscan[, c("Site.Number", "Collection.Method", "Richness")]
+richness.df <- richness.df %>%
+  spread(Collection.Method, Richness)
+
+# Run the t-test
+richness.t.test <- t.test(x = richness.df$Malaise, 
+                          y = richness.df$`Pollard Walk`,
+                          paired = TRUE)
+
+# Store the value of t
+richness.t <- round(richness.t.test$statistic, 3)
+
+# Rounding may turn p-values into zero, so account for that possibility here
+richness.p <- "< 0.001"
+if (richness.t.test$p.value > 0.001) {
+  richness.p <- round(richness.t.test$p.value, 3)
+}
+
+# Store the means
+richness.means <- bioscan %>%
+  group_by(Collection.Method) %>%
+  summarise(means = round(mean(Richness), 3))
+```
+
+#### Diversity
+```{r t-test-diversity}
+# Create data frame for diversity t-test. One column for Pollard, one for Malaise
+diversity.df <- bioscan[, c("Site.Number", "Collection.Method", "Diversity")]
+diversity.df <- diversity.df %>%
+  spread(Collection.Method, Diversity)
+
+# Run the t-test
+diversity.t.test <- t.test(x = diversity.df$Malaise, 
+                          y = diversity.df$`Pollard Walk`,
+                          paired = TRUE)
+
+# Store the value of t
+diversity.t <- round(diversity.t.test$statistic, 3)
+
+# Rounding may turn p-values into zero, so account for that possibility here
+diversity.p <- "< 0.001"
+if (diversity.t.test$p.value > 0.001) {
+  diversity.p <- round(diversity.t.test$p.value, 3)
+}
+
+# Store the means
+diversity.means <- bioscan %>%
+  group_by(Collection.Method) %>%
+  summarise(means = round(mean(Diversity), 3))
+```
+
+## Results
+
+Observed istribution of richness and diversity:
+```{r boxplot}
+# We need to create long-format data for use with ggplot
+bioscan.long <- bioscan[, c("Collection.Method", "Richness", "Diversity")] %>%
+  gather(key = "statistic",
+         value = "value",
+         -Collection.Method)
+
+# For consistency, replace "Malaise" with "Malaise trap"
+bioscan.long$Collection.Method <- gsub(pattern = "Malaise", 
+                                       replacement = "Malaise Trap",
+                                       x = bioscan.long$Collection.Method)
+
+# Re-level the two factors so they appear in desired order
+bioscan.long$Collection.Method <- factor(bioscan.long$Collection.Method,
+                                            levels = c("Pollard Walk", "Malaise Trap"))
+bioscan.long$statistic <- factor(bioscan.long$statistic,
+                                    levels = c("Richness", "Diversity"))
+
+# Boxplot, with a separate plot for each statistic
+statistics.plot <- ggplot(data = bioscan.long, 
+                          mapping = aes(x = Collection.Method, y = value)) +
+  geom_boxplot() +
+  facet_wrap(~ statistic, scales = "free_y", strip.position = "left") +
+  theme_bw() +
+  ylab(NULL) + 
+  xlab(NULL) +
+  theme(strip.background = element_blank(),
+        strip.placement = "outside")
+print(statistics.plot)
+ggsave(filename = "output/richness-diversity-boxplot.png", plot = statistics.plot)
+```
+
+Means table:
+
+| Collection Method | _R_ | _H_ |
+|:------------------|:---:|:---:|
+| Malaise trap      | `r richness.means$means[richness.means$Collection.Method == "Malaise"]` |  `r diversity.means$means[diversity.means$Collection.Method == "Malaise"]` |
+| Pollard walk      | `r richness.means$means[richness.means$Collection.Method == "Pollard Walk"]` |  `r diversity.means$means[diversity.means$Collection.Method == "Pollard Walk"]` |
+
+t-table:
+
+| Statistic | _t_ | _p_ |
+|:----------|:---:|:---:|
+| _R_       | `r richness.t` | `r richness.p` | 
+| _H_       | `r diversity.t` | `r diversity.p` | 
