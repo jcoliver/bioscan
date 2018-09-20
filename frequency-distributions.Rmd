@@ -1,0 +1,46 @@
+---
+title: "Frequency Distributions"
+author: "Jeff Oliver"
+date: "September 20, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Compare the frequency of species' occurence across sites in the two collection methods
+
+```{r load-dependencies}
+library("ggplot2") # plotting 
+library("dplyr")
+library("tidyr")   # for long-data formatting
+source(file = "bioscan-functions.R")
+bioscan <- CompleteBioscan()
+```
+
+Want to create a histogram with:
+
++ X-axis: the number of sites
++ Y-axis: number of species
+
+Shows the frequency distribution of species, to see if there were lots of singlets/doublets, or if there were many species seen at many sites.
+
+We'll want a data frame like:
+
+| Collection Method | Species | # Sites |
+|:------------------|:--------|:-------:|
+| Malaise           | _Agraulis\_vanillae_ |  |
+
+
+```{r calculate-frequencies}
+# Identify those columns with species data
+species.cols <- c(5:33)
+
+# Count just whether or not a species occurred for a particular site/method
+bioscan.freqs <- as.data.frame(bioscan[, species.cols] > 0)
+bioscan.freqs$Collection.Method <- bioscan$Collection.Method
+
+bioscan.sums <- bioscan.freqs %>%
+  group_by(Collection.Method)
+```

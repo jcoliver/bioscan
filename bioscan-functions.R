@@ -37,6 +37,14 @@ CompleteBioscan <- function(input = "data/BioScanData.csv",
     # Save this to a file, too
     write.csv(x = bioscan.complete, file = output, row.names = FALSE)
   }
+  
+  # # Drop any species colums with zero observations [INCOMPLETE]
+  # # Identify those columns with species data
+  # species.cols <- c(5:33)
+  # 
+  # species.totals <- colSums(bioscan.complete[, species.cols])
+  # zero.obs <- names(species.totals)[species.totals < 1]
+
   return(bioscan.complete)
 }
 

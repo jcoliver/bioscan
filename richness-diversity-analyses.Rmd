@@ -1,0 +1,12 @@
+---
+title: "Richness & Diversity"
+author: "Jeff Oliver"
+date: "September 20, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# TODO: Create plot with observed species richness and shannon's H (faceting)
