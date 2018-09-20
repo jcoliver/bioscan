@@ -28,9 +28,12 @@ Shows the frequency distribution of species, to see if there were lots of single
 
 We'll want a data frame like:
 
-| Collection Method | Species | # Sites |
-|:------------------|:--------|:-------:|
-| Malaise           | _Agraulis\_vanillae_ |  |
+| Collection Method | Species              | # Sites |
+|:------------------|:---------------------|:-------:|
+| Malaise           | _Agraulis\_vanillae_ | 6       |
+| Malaise           | _Brephidium\_exilis_ | 1       |
+| ...               | ...                  | ...     |
+| Pollard Walk      | _Vanessa\_cardui_    | 13      |
 
 
 ```{r calculate-frequencies}
@@ -41,6 +44,40 @@ species.cols <- c(5:33)
 bioscan.freqs <- as.data.frame(bioscan[, species.cols] > 0)
 bioscan.freqs$Collection.Method <- bioscan$Collection.Method
 
-bioscan.sums <- bioscan.freqs %>%
-  group_by(Collection.Method)
+# There has to be a tidyverse way of doing this, but for now, brute force
+# Separate the two collection methods
+malaise.freqs <- bioscan.freqs[bioscan.freqs$Collection.Method == "Malaise", ]
+pollard.freqs <- bioscan.freqs[bioscan.freqs$Collection.Method == "Pollard Walk", ]
+
+# Use boolean math to count the number of sites each species occurred in
+malaise.sums <- colSums(malaise.freqs[, -(which(colnames(malaise.freqs) == "Collection.Method"))])
+pollard.sums <- colSums(pollard.freqs[, -(which(colnames(pollard.freqs) == "Collection.Method"))])
+
+# Convert to long format and add method as new column
+malaise.long <- data.frame(species = names(malaise.sums),
+                           num.sites = malaise.sums)
+malaise.long$Collection.Method <- "Malaise"
+pollard.long <- data.frame(species = names(pollard.sums),
+                           num.sites = pollard.sums)
+pollard.long$Collection.Method <- "Pollard Walk"
+
+# Combine data back together for plot
+bioscan.long <- rbind(malaise.long, pollard.long)
+# Drop any zeros, since we're not interested in plotting those
+bioscan.long <- bioscan.long[bioscan.long$num.sites > 0, ]
+rownames(bioscan.long) <- NULL
+```
+
+We now have a table, so we can plot the histogram.
+
+```{r plot-freqs}
+freq.plot <- ggplot(data = bioscan.long, mapping = aes(x = num.sites)) +
+  geom_histogram(bins = max(bioscan.long$num.sites)) +
+  facet_wrap(~ Collection.Method) +
+  theme_bw() +
+  xlab(label = "Number of Sites") +
+  ylab(label = "Number of Species") +
+  scale_x_continuous(breaks = c(0, 4, 8, 12, 16))
+print(freq.plot)
+ggsave(filename = "output/frequency-distribution.png", plot = freq.plot)
 ```
