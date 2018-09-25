@@ -98,6 +98,14 @@ CleanINaturalist <- function(input = "data/iNaturalist-clean.csv",
                                 replacement = "_", 
                                 x = as.character(inaturalist$species))
     
+    # Before taxonomic reconciliation, save a version
+    inaturalist$species <- as.factor(inaturalist$species)
+    write.csv(x = inaturalist, 
+              file = gsub(pattern = "clean",
+                          replacement = "unclean",
+                          x = output), 
+              row.names = FALSE)
+
     # And need to make two adjustments to iNaturalist species so they match with 
     # taxonomy used by bioscan
     inaturalist$species[inaturalist$species == "Icaricia_acmon"] <- "Plebejus_acmon"

@@ -12,7 +12,7 @@ inat$sampledate <- as.Date(inat$eventdate)
 inat <- inat[inat$sampledate >= "2015-03-15" & inat$sampledate <= "2015-07-15", ]
 
 # Retain only a few columns of interest
-inat <- inat[, c("gbifid", "species", "decimallatitude", "decimallongitude", "sampledate")]
+inat <- inat[, c("gbifid", "species", "decimallatitude", "decimallongitude", "sampledate", "catalognumber")]
 # Rename those lat/long columns
 colnames(inat)[which(colnames(inat) == "decimallatitude")] <- "latitude"
 colnames(inat)[which(colnames(inat) == "decimallongitude")] <- "longitude"
