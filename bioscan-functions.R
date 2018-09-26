@@ -99,7 +99,6 @@ CleanINaturalist <- function(input = "data/iNaturalist-clean.csv",
                                 x = as.character(inaturalist$species))
     
     # Before taxonomic reconciliation, save a version
-    inaturalist$species <- as.factor(inaturalist$species)
     write.csv(x = inaturalist, 
               file = gsub(pattern = "clean",
                           replacement = "unclean",
@@ -116,7 +115,8 @@ CleanINaturalist <- function(input = "data/iNaturalist-clean.csv",
     # Turn it back into a factor, which also means we've dropped unused levels
     inaturalist$species <- as.factor(inaturalist$species)
     
-    inaturalist.reduced <- inaturalist
+    # And drop one record of Atlides halesus that we don't trust
+    inaturalist.reduced <- inaturalist[inaturalist$catalognumber != 14464139, ]
     rm(bioscan, min.lon, max.lon, min.lat, max.lat, inaturalist)
     
     # Go ahead and save this so we can use it elsewhere (like a map)
