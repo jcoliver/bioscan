@@ -127,7 +127,7 @@ richness.histogram <- ggplot(data = bootstrap.long, mapping = aes(x = Richness, 
   xlab(labe = "Total Species Richness") +
   theme_bw()
 print(richness.histogram)
-ggsave(filename = "output/figure-bootstrap-richness-histogram.png", plot = richness.boxplot)
+ggsave(filename = "output/figure-bootstrap-richness-histogram.png", plot = richness.histogram)
 ```
 
 And do a quick t-test comparing iNaturalist to each method
