@@ -41,6 +41,7 @@ For the iNaturalist data, will perform similar approach, but will need only to c
 ```{r inaturalist-data-processing}
 # Read in full data
 inaturalist <- CleanINaturalist(bioscan.df = bioscan)
+inaturalist.unclean <- CleanINaturalist(bioscan.df = bioscan, output = "data/iNaturalist-unclean-reduced.csv")
 ```
 
 ## Richness calculation
@@ -58,7 +59,7 @@ inaturalist.total <- length(unique(inaturalist$species))
 
 ```{r richness-bootstrapping}
 # Set up size of bootstrap and data frame to collect results
-num.samples <- 100
+num.samples <- 1000
 bootstrapped.df <- data.frame(id = 1:num.samples,
                               Malaise = NA,
                               Pollard = NA,
@@ -89,7 +90,7 @@ Looking at totals of species in the three data sources:
 | Observed richness | `r malaise.total` | `r pollard.total` | `r inaturalist.total` |
 | Bootstrapped estimate | `r round(mean.bs.malaise, 3)` | `r round(mean.bs.pollard, 3)` | `r round(mean.bs.inaturalist, 3)` |
 
-We can compare the three sources of richness visually with a boxplot (after reshaping our data):
+We can compare the three sources of richness visually with a histogram (after reshaping our data):
 ```{r richness-boxplot, out.height = "250px"}
 bootstrap.long <- gather(data = bootstrapped.df, key = "Collection.Method", value = "Richness", -id)
 
@@ -97,17 +98,6 @@ bootstrap.long <- gather(data = bootstrapped.df, key = "Collection.Method", valu
 bootstrap.long$Collection.Method <- factor(bootstrap.long$Collection.Method, 
                                            levels = c("Malaise", "Pollard", "iNaturalist"))
 
-richness.boxplot <- ggplot(data = bootstrap.long, mapping = aes(x = Collection.Method, y = Richness)) +
-  geom_boxplot() +
-  xlab(label = "Collection Method") + 
-  ylab(label = "Species Richness") +
-  theme_bw()
-print(richness.boxplot)
-ggsave(filename = "output/figure-bootstrap-richness-boxplot.png", plot = richness.boxplot)
-```
-
-It may be more appropriate to visualize as a histogram.
-```{r richness-histogram}
 # Use group means for lines in histogram
 means.df <- bootstrap.long %>% 
   group_by(Collection.Method) %>%
@@ -118,20 +108,104 @@ means.df$Collection.Method <-  factor(means.df$Collection.Method,
 
 richness.histogram <- ggplot(data = bootstrap.long, mapping = aes(x = Richness, fill = Collection.Method)) +
   geom_histogram(position = "identity", binwidth = 1, color = "#dddddd", alpha = 0.75) +
-  scale_color_brewer(palette = "Dark2") + 
-  scale_fill_brewer(palette = "Dark2") + 
+  scale_color_brewer(palette = "Dark2", name = "Survey") + 
+  scale_fill_brewer(palette = "Dark2", name = "Survey") + 
   geom_vline(data = means.df, 
              mapping = aes(xintercept = group.mean, color = Collection.Method), 
              linetype = "dashed") +
   ylab(label = "# Bootstrap Replicates") +
-  xlab(labe = "Total Species Richness") +
-  theme_bw()
+  xlab(label = "Total Species Richness") +
+  theme_bw() +
+  theme(legend.position = c(0.12, 0.8))
 print(richness.histogram)
-ggsave(filename = "output/figure-bootstrap-richness-histogram.png", plot = richness.histogram)
+ggsave(filename = "output/bootstrap-richness-histogram.png", plot = richness.histogram)
 ```
 
 And do a quick t-test comparing iNaturalist to each method
 ```{r boostrap-t-test}
+bs.pollard.t <- t.test(x = bootstrapped.df$Pollard, y = bootstrapped.df$iNaturalist)
+bs.malaise.t <- t.test(x = bootstrapped.df$Malaise, y = bootstrapped.df$iNaturalist)
+```
+
+### Pollard walk vs. iNaturalist
+_t_ = `r round(bs.pollard.t$statistic, 3)`  
+_p_ = `r round(bs.pollard.t$p.value, 3)`  
+Means = `r abs(round(bs.pollard.t$estimate, 3))` (Pollard, iNaturalist)
+
+### Malaise traps vs. iNaturalist
+_t_ = `r round(bs.malaise.t$statistic, 3)`  
+_p_ = `r round(bs.malaise.t$p.value, 3)`  
+Means = `r abs(round(bs.malaise.t$estimate, 3))` (Malaise, iNaturalist)
+
+## Unreconciled iNaturalist
+Looking at the effect of taxonomic reconciliation, and how skipping that step with the iNaturalist data may have affected our results.
+
+```{r richness-bootstrapping-unclean}
+# Set up size of bootstrap and data frame to collect results
+num.samples <- 1000
+bootstrapped.df <- data.frame(id = 1:num.samples,
+                              Malaise = NA,
+                              Pollard = NA,
+                              iNaturalist = NA)
+
+for (i in 1:num.samples) {
+  bs.malaise <- malaise[sample(x = 1:nrow(malaise), size = nrow(malaise), replace = TRUE), ]
+  bootstrapped.df$Malaise[i] <- sum(colSums(x = bs.malaise[, species.cols]) > 0)
+
+  bs.pollard <- pollard[sample(x = 1:nrow(pollard), size = nrow(pollard), replace = TRUE), ]
+  bootstrapped.df$Pollard[i] <- sum(colSums(x = bs.pollard[, species.cols]) > 0)
+  
+  bs.inaturalist <- inaturalist.unclean[sample(x = 1:nrow(inaturalist.unclean), 
+                                               size = nrow(inaturalist.unclean), 
+                                               replace = TRUE), ]
+  bootstrapped.df$iNaturalist[i] <- length(unique(bs.inaturalist$species))
+}
+
+# Calculate means so we can report those
+mean.bs.pollard <- mean(bootstrapped.df$Pollard)
+mean.bs.malaise <- mean(bootstrapped.df$Malaise)
+mean.bs.inaturalist <- mean(bootstrapped.df$iNaturalist)
+```
+
+Looking at totals of species in the three data sources:
+
+|     | Malaise | Pollard | iNaturalist |
+|:----|:-------:|:-------:|:-----------:|
+| Observed richness | `r malaise.total` | `r pollard.total` | `r inaturalist.total` |
+| Bootstrapped estimate | `r round(mean.bs.malaise, 3)` | `r round(mean.bs.pollard, 3)` | `r round(mean.bs.inaturalist, 3)` |
+
+Comparing the results of the bootstrapping in a histogram:
+```{r richness-histogram-unclean, out.height = "250px"}
+bootstrap.long <- gather(data = bootstrapped.df, key = "Collection.Method", value = "Richness", -id)
+
+# Re-leveling the Collection.Method so it displays in preferred order
+bootstrap.long$Collection.Method <- factor(bootstrap.long$Collection.Method, 
+                                           levels = c("Malaise", "Pollard", "iNaturalist"))
+
+# Use group means for lines in histogram
+means.df <- bootstrap.long %>% 
+  group_by(Collection.Method) %>%
+  summarize(group.mean = mean(Richness))
+# Re-level collection method to display as preferred
+means.df$Collection.Method <-  factor(means.df$Collection.Method, 
+                                      levels = c("Malaise", "Pollard", "iNaturalist"))
+
+richness.histogram <- ggplot(data = bootstrap.long, mapping = aes(x = Richness, fill = Collection.Method)) +
+  geom_histogram(position = "identity", binwidth = 1, color = "#dddddd", alpha = 0.75) +
+  scale_color_brewer(palette = "Dark2", name = "Survey") + 
+  scale_fill_brewer(palette = "Dark2", name = "Survey") + 
+  geom_vline(data = means.df, 
+             mapping = aes(xintercept = group.mean, color = Collection.Method), 
+             linetype = "dashed") +
+  ylab(label = "# Bootstrap Replicates") +
+  xlab(label = "Total Species Richness") +
+  theme_bw()
+print(richness.histogram)
+ggsave(filename = "output/bootstrap-richness-histogram-unclean.png", plot = richness.histogram)
+```
+
+And do a quick t-test comparing iNaturalist to each method
+```{r boostrap-t-test-unclean}
 bs.pollard.t <- t.test(x = bootstrapped.df$Pollard, y = bootstrapped.df$iNaturalist)
 bs.malaise.t <- t.test(x = bootstrapped.df$Malaise, y = bootstrapped.df$iNaturalist)
 ```

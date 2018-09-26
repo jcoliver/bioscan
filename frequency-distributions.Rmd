@@ -72,12 +72,14 @@ We now have a table, so we can plot the histogram.
 
 ```{r plot-freqs}
 freq.plot <- ggplot(data = bioscan.long, mapping = aes(x = num.sites)) +
-  geom_histogram(bins = max(bioscan.long$num.sites)) +
+  geom_histogram(bins = max(bioscan.long$num.sites), color = "white") +
   facet_wrap(~ Collection.Method) +
   theme_bw() +
   xlab(label = "Number of Sites") +
   ylab(label = "Number of Species") +
-  scale_x_continuous(breaks = c(0, 4, 8, 12, 16))
+  scale_x_continuous(breaks = c(0, 4, 8, 12, 16)) +
+  theme_bw() +
+  theme(strip.background = element_blank())
 print(freq.plot)
 ggsave(filename = "output/frequency-distribution.png", plot = freq.plot)
 ```

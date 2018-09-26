@@ -98,5 +98,5 @@ richness.boxplot <- ggplot(data = bioscan, mapping = aes(x = Collection.Method, 
   ylab(label = "Species Richness") + 
   theme_bw()
 print(richness.boxplot)
-ggsave(filename = "output/figure-richness-pairwise.png", plot = richness.boxplot)
+ggsave(filename = "output/richness-pairwise-boxplot.png", plot = richness.boxplot)
 ```

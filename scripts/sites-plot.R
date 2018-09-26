@@ -45,22 +45,6 @@ la.map <- get_map(location = map.bounds,
                   source = "stamen", 
                   maptype = "toner-lite",
                   color = "bw")
-# 
-# bioscan.map <- ggmap(la.map) +
-#   geom_point(data = latlongs,
-#              mapping = aes(x = Longitude, y = Latitude),
-#              shape = 21,
-#              fill = "#ff8c1a",
-#              color = "black",
-#              size = 3) +
-#   theme(legend.position = "none") +
-#   theme(axis.title = element_blank(),
-#         axis.text = element_blank(),
-#         axis.ticks = element_blank()) +
-#   coord_map(xlim = c(min(bioscan$Longitude) - 0.1, max(bioscan$Longitude) + 0.1),
-#             ylim = c(min(bioscan$Latitude) - 0.1, max(bioscan$Latitude) + 0.1))
-# print(bioscan.map)
-# ggsave(filename = "output/site-map.png", plot = bioscan.map)
 
 bounds <- data.frame(x = c(rep(min(latlongs$Longitude), times = 2), rep(max(latlongs$Longitude), times = 2)),
                      y = c(min(latlongs$Latitude), max(latlongs$Latitude), max(latlongs$Latitude), min(latlongs$Latitude)))
@@ -89,4 +73,4 @@ both.map <- ggmap(la.map) +
   coord_map(xlim = c(min(bioscan$Longitude) - 0.1, max(bioscan$Longitude) + 0.1),
             ylim = c(min(bioscan$Latitude) - 0.1, max(bioscan$Latitude) + 0.1))
 print(both.map)
-ggsave(filename = "output/figure-sites.png", plot = both.map)
+ggsave(filename = "output/site-map.png", plot = both.map)

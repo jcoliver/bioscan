@@ -71,6 +71,9 @@ if (richness.t.test$p.value > 0.001) {
   richness.p <- round(richness.t.test$p.value, 3)
 }
 
+# Store the estimated difference in means
+richness.estimate <- round(richness.t.test$estimate, 3)
+
 # Store the means
 richness.means <- bioscan %>%
   group_by(Collection.Method) %>%
@@ -97,6 +100,9 @@ diversity.p <- "< 0.001"
 if (diversity.t.test$p.value > 0.001) {
   diversity.p <- round(diversity.t.test$p.value, 3)
 }
+
+# Store the estimated difference in means
+diversity.estimate <- round(diversity.t.test$estimate, 3)
 
 # Store the means
 diversity.means <- bioscan %>%
@@ -148,7 +154,7 @@ Means table:
 
 t-table:
 
-| Statistic | _t_ | _p_ |
-|:----------|:---:|:---:|
-| _R_       | `r richness.t` | `r richness.p` | 
-| _H_       | `r diversity.t` | `r diversity.p` | 
+| Statistic | _t_ | _p_ | $\delta$ |
+|:----------|:---:|:---:|:-------:|
+| _R_       | `r richness.t` | `r richness.p` | `r richness.estimate` |
+| _H_       | `r diversity.t` | `r diversity.p` | `r diversity.estimate` |

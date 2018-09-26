@@ -63,5 +63,5 @@ diversity.boxplot <- ggplot(data = diversity.long, mapping = aes(x = Collection.
   ylab(label = "Shannon's H") + 
   theme_bw()
 print(diversity.boxplot)
-ggsave(filename = "output/figure-diversity-pairwise.png", plot = diversity.boxplot)
+ggsave(filename = "output/diversity-pairwise-boxplot.png", plot = diversity.boxplot)
 ```
