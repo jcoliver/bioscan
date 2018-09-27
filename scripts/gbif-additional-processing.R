@@ -1,4 +1,4 @@
-# Cleaning up iNaturalist data to restrict to area of interest
+# Cleaning up iNaturalist data to restrict to dates of interest
 # Jeff Oliver
 # jcoliver@email.arizona.edu
 # 2018-08-28

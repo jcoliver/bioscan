@@ -1,4 +1,4 @@
-# Reconcile taxonomic differences between bioscan & iNaturalist
+# Quality assessment to compare differences in taxonomy among data sources
 # Jeffrey C. Oliver
 # jcoliver@email.arizona.edu
 # 2018-08-30

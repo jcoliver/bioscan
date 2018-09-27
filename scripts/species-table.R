@@ -1,4 +1,4 @@
-# Table for paper with species found in each survey type
+# Table with species found in each survey type
 # Jeff Oliver
 # jcoliver@email.arizona.edu
 # 2018-09-10
