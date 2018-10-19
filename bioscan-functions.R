@@ -34,6 +34,10 @@ CompleteBioscan <- function(input = "data/BioScanData.csv",
     rownames(bioscan.complete) <- NULL
     rm(bioscan, pollard.sites, malaise.sites, sites.with.both)
     
+    # Update two column names to conform to Pelham's taxonomy
+    names(bioscan.complete)[names(bioscan.complete) == "Plebejus_acmon"] <- "Icaricia_acmon"
+    names(bioscan.complete)[names(bioscan.complete) == "Papilio_cresphontes"] <- "Papilio_rumiko"
+    
     # Save this to a file, too
     write.csv(x = bioscan.complete, file = output, row.names = FALSE)
   }
@@ -107,9 +111,9 @@ CleanINaturalist <- function(input = "data/iNaturalist-clean.csv",
 
     # And need to make two adjustments to iNaturalist species so they match with 
     # taxonomy used by bioscan
-    inaturalist$species[inaturalist$species == "Icaricia_acmon"] <- "Plebejus_acmon"
+    # inaturalist$species[inaturalist$species == "Icaricia_acmon"] <- "Plebejus_acmon"
     inaturalist$species[inaturalist$species == "Paratrytone_melane"] <- "Poanes_melane"
-    inaturalist$species[inaturalist$species == "Zerynthia_rumina"] <- "Papilio_cresphontes"
+    inaturalist$species[inaturalist$species == "Zerynthia_rumina"] <- "Papilio_rumiko"
     inaturalist$species[inaturalist$species == "Limenitis_bredowii"] <- "Adelpha_bredowii"
     
     # Turn it back into a factor, which also means we've dropped unused levels
