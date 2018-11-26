@@ -25,6 +25,13 @@ bioscan <- na.omit(bioscan)
 latlongs <- unique(bioscan[, c("Longitude", "Latitude")])
 
 latlongs.inat <- unique(inaturalist[, c("longitude", "latitude")])
+colnames(latlongs.inat) <- c("Longitude", "Latitude")
+
+# Create data frame with both data sources for easier graphing
+latlongs.both <- rbind(latlongs, latlongs.inat)
+latlongs.both$Source <- "iNaturalist"
+latlongs.both$Source[1:nrow(latlongs)] <- "SCAN surveys"
+
 ################################################################################
 # MAP
 map.bounds <- c(floor(min(bioscan$Longitude)),
@@ -35,7 +42,7 @@ names(map.bounds) <- c("left", "bottom", "right", "top")
 
 la.map <- get_map(location = map.bounds, 
                   source = "stamen", 
-                  maptype = "toner-lite",
+                  maptype = "terrain-lines", # toner-lite
                   color = "bw")
 
 bounds <- data.frame(x = c(rep(min(latlongs$Longitude), times = 2), rep(max(latlongs$Longitude), times = 2)),
@@ -48,23 +55,40 @@ latlongs.scale <- latlongs
 colnames(latlongs.scale) <- c("long", "lat")
 latlongs.scale[nrow(latlongs.scale) + 1, ] <- list("long" = -118.425, "lat" = 33.84)
 
+city.labels <- data.frame(names = c("Los Angeles", "Del Aire", "East Compton"),
+                          longitude = c(-118.2437, -118.3695, -118.1953),
+                          latitude = c(34.0522, 33.9161, 33.8981),
+                          sizes = c(7, 5, 5))
+
 both.map <- ggmap(la.map) +
   geom_polygon(data = bounds, 
                mapping = aes(x = x, y = y),
                fill = "#ffffff",  # color of rectangle
                color = "#dd2222", # color of line around rectangle
-               alpha = 0.35) +
-  geom_point(data = latlongs,
-             mapping = aes(x = Longitude, y = Latitude),
-             shape = 21,
-             fill = "#ff8c1a",
-             color = "black",
+               alpha = 0.45) +
+  annotate("text",
+           label = city.labels$name, 
+           x = city.labels$longitude, 
+           y = city.labels$latitude, 
+           size = city.labels$sizes, 
+           color = "black") +
+  geom_point(data = latlongs.both,
+             mapping = aes(x = Longitude, y = Latitude, shape = Source, color = Source, fill = Source),
              size = 3) +
-  geom_point(data = latlongs.inat,
-             mapping = aes(x = longitude, y = latitude),
-             shape = 4,
-             color = "#1133ff",
-             size = 3) +
+  scale_shape_manual(values = c(4, 21)) + # X, filled circle
+  scale_color_manual(values = c("#1133ff", "#000000")) + # blue, orange
+  scale_fill_manual(values = c("#ffffff", "#ff8c1a")) + # first argument is dummy
+  # geom_point(data = latlongs,
+  #            mapping = aes(x = Longitude, y = Latitude),
+  #            shape = 21,
+  #            fill = "#ff8c1a",
+  #            color = "black",
+  #            size = 3) +
+  # geom_point(data = latlongs.inat,
+  #            mapping = aes(x = longitude, y = latitude),
+  #            shape = 4,
+  #            color = "#1133ff",
+  #            size = 3) +
   scalebar(data = latlongs.scale,
            dist = 5,
            location = "bottomleft",
@@ -73,7 +97,8 @@ both.map <- ggmap(la.map) +
            st.dist = 0.04,
            st.size = 4.5,
            model = "WGS84") +
-  theme(legend.position = "none") +
+  # theme(legend.position = "none") +
+  theme(legend.position = c(0.80, 0.11)) +
   theme(axis.title = element_blank(),
         axis.text = element_blank(),
         axis.ticks = element_blank()) +
