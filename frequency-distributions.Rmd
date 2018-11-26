@@ -59,7 +59,7 @@ malaise.long <- data.frame(species = names(malaise.sums),
 malaise.long$Collection.Method <- "Malaise"
 pollard.long <- data.frame(species = names(pollard.sums),
                            num.sites = pollard.sums)
-pollard.long$Collection.Method <- "Pollard Walk"
+pollard.long$Collection.Method <- "Pollard walk"
 
 # Combine data back together for plot
 bioscan.long <- rbind(malaise.long, pollard.long)
@@ -73,12 +73,12 @@ We now have a table, so we can plot the histogram.
 ```{r plot-freqs}
 # Rename collection method to be congruent with rest of text
 bioscan.long$Collection.Method <- gsub(pattern = "Malaise",
-                                       replacement = "Malaise Trap",
+                                       replacement = "Malaise trap",
                                        x = bioscan.long$Collection.Method)
 
 # Relevel the collection method so pollard walk comes first
 bioscan.long$Collection.Method <- factor(x = as.character(bioscan.long$Collection.Method), 
-                                         levels = c("Pollard Walk", "Malaise Trap"))
+                                         levels = c("Pollard walk", "Malaise trap"))
 
 freq.plot <- ggplot(data = bioscan.long, mapping = aes(x = num.sites)) +
   geom_histogram(bins = max(bioscan.long$num.sites), color = "white") +
