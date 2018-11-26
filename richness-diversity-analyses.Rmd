@@ -19,6 +19,7 @@ Using the BioSCAN data, we first calculate _R_ (richness) and _H_ (diversity) fo
 Starting by loading dependencies and reading in the data
 ```{r data-setup}
 library("tidyr")    # converting data to long and wide format
+library("dplyr")    # data wrangling (group_by)
 library("ggplot2")  # plotting
 library("vegan")    # calculating Shannon's H
 source(file = "bioscan-functions.R")
@@ -135,7 +136,12 @@ bioscan.long$statistic <- factor(bioscan.long$statistic,
 statistics.plot <- ggplot(data = bioscan.long, 
                           mapping = aes(x = Collection.Method, y = value)) +
   geom_boxplot() +
-  facet_wrap(~ statistic, scales = "free_y", strip.position = "left") +
+  facet_wrap(~ statistic, 
+             scales = "free_y", 
+             strip.position = "left",
+             labeller = as_labeller(c(Richness = "Richness~(no.~species)", 
+                                      Diversity = "Diversity~(italic(H))"),
+                                    label_parsed)) +
   theme_bw() +
   ylab(NULL) + 
   xlab(NULL) +
