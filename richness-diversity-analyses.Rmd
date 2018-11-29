@@ -121,14 +121,20 @@ bioscan.long <- bioscan[, c("Collection.Method", "Richness", "Diversity")] %>%
          value = "value",
          -Collection.Method)
 
-# For consistency, replace "Malaise" with "Malaise trap"
+# For consistency, replace "Malaise" with "Malaise trap" and "Pollard Walk" with
+# "Pollard walk"
 bioscan.long$Collection.Method <- gsub(pattern = "Malaise", 
-                                       replacement = "Malaise Trap",
+                                       replacement = "Malaise trap",
                                        x = bioscan.long$Collection.Method)
+
+bioscan.long$Collection.Method <- gsub(pattern = "Pollard Walk", 
+                                       replacement = "Pollard walk",
+                                       x = bioscan.long$Collection.Method)
+
 
 # Re-level the two factors so they appear in desired order
 bioscan.long$Collection.Method <- factor(bioscan.long$Collection.Method,
-                                            levels = c("Pollard Walk", "Malaise Trap"))
+                                            levels = c("Pollard walk", "Malaise trap"))
 bioscan.long$statistic <- factor(bioscan.long$statistic,
                                     levels = c("Richness", "Diversity"))
 
@@ -148,7 +154,10 @@ statistics.plot <- ggplot(data = bioscan.long,
   theme(strip.background = element_blank(),
         strip.placement = "outside")
 print(statistics.plot)
-ggsave(filename = "output/richness-diversity-boxplot.png", plot = statistics.plot)
+ggsave(filename = "output/richness-diversity-boxplot.png", 
+       plot = statistics.plot,
+       width = 4.75, 
+       height = 3)
 ```
 
 Means table:
