@@ -141,7 +141,7 @@ bioscan.long$statistic <- factor(bioscan.long$statistic,
 # Boxplot, with a separate plot for each statistic
 statistics.plot <- ggplot(data = bioscan.long, 
                           mapping = aes(x = Collection.Method, y = value)) +
-  geom_boxplot() +
+  geom_boxplot(width = 0.2) +
   facet_wrap(~ statistic, 
              scales = "free_y", 
              strip.position = "left",
